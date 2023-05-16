@@ -46,12 +46,14 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
     :param product_id: Product ID to lookup.
     :param num_pages: Number of pages to get. Each page contains 10 reviews.
     :return: DataFrame with the product reviews.
+
+    Note: Saves the product reviews to a parquet file in /data/reviews/{product_id}.parquet
     """
     tasks = []
     num_half_pages = num_pages // 2
     for page in range(1, num_half_pages + 1):
-        tasks.append(get_product_reviews_page(product_id, page, "helpful"))
-        tasks.append(get_product_reviews_page(product_id, page + num_half_pages, "recent"))
+        tasks.append(_get_product_reviews_page(product_id, page, "helpful"))
+        tasks.append(_get_product_reviews_page(product_id, page + num_half_pages, "recent"))
 
     reviews = await asyncio.gather(*tasks)
     reviews_flat = [item for sublist in reviews for item in sublist.get("result")]
@@ -66,10 +68,13 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
     })
     df = df[["review_id", "star_rating", "review_headline", "review_body"]]
 
+    # save the reviews to a parquet file
+    df.to_parquet(f"data/reviews/{product_id}.parquet", index=False)
+
     return df
 
 
-async def get_product_reviews_page(product_id: str, page: int = 1, sort_by: str = "helpful") -> dict:
+async def _get_product_reviews_page(product_id: str, page: int = 1, sort_by: str = "helpful") -> dict:
     """
     Get a page of product reviews from Amazon.
     :param product_id: Product ID to lookup.
