@@ -3,12 +3,12 @@
 import json
 import os
 
-import requests
+import httpx
 
 AMAZON_PRODUCT_BASE_URL = "https://www.amazon.com/dp/"
 
 
-def get_amazon_product_info(product_id: str) -> dict:
+async def get_amazon_product_info(product_id: str) -> dict:
     """
     Get Product Information from Amazon.
     :param product_id: Product ID to lookup.
@@ -23,7 +23,8 @@ def get_amazon_product_info(product_id: str) -> dict:
     }
 
     try:
-        response = requests.get(url, headers=headers, params=querystring)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers, params=querystring)
         data = json.loads(response.content).get("result")[0]
 
         return {
