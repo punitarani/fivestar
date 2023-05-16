@@ -74,6 +74,15 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
     return df
 
 
+def load_product_reviews(product_id: str) -> pd.DataFrame:
+    """
+    Load product reviews from a parquet file.
+    :param product_id: Product ID to lookup.
+    :return: DataFrame with the product reviews.
+    """
+    return pd.read_parquet(f"data/reviews/{product_id}.parquet")
+
+
 async def _get_product_reviews_page(product_id: str, page: int = 1, sort_by: str = "helpful") -> dict:
     """
     Get a page of product reviews from Amazon.
