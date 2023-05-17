@@ -17,7 +17,7 @@ async def get_amazon_product_info(product_id: str) -> dict:
     :return: Product information.
     """
     url = "https://amazon23.p.rapidapi.com/product-details"
-    querystring = {"asin": product_id, "country": "US"}
+    querystring = {"asin": product_id}
 
     headers = {
         "X-RapidAPI-Key": os.getenv("RAPID_API_KEY"),
@@ -26,7 +26,7 @@ async def get_amazon_product_info(product_id: str) -> dict:
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers=headers, params=querystring)
+            response = await client.get(url, headers=headers, params=querystring, timeout=20)
         data = json.loads(response.content).get("result")[0]
         info = {
             "title": data.get("title", product_id),
@@ -110,7 +110,7 @@ async def _get_product_reviews_page(product_id: str, page: int = 1, sort_by: str
     :return: Dictionary with the product reviews.
     """
     url = "https://amazon23.p.rapidapi.com/reviews"
-    querystring = {"asin": product_id, "sort_by": sort_by, "page": str(page), "country": "US"}
+    querystring = {"asin": product_id, "sort_by": sort_by, "page": str(page)}
 
     headers = {
         "X-RapidAPI-Key": os.getenv("RAPID_API_KEY"),
@@ -118,5 +118,5 @@ async def _get_product_reviews_page(product_id: str, page: int = 1, sort_by: str
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers, params=querystring, timeout=10)
+        response = await client.get(url, headers=headers, params=querystring, timeout=20)
     return json.loads(response.content)
