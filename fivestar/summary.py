@@ -118,7 +118,7 @@ async def get_pros_cons(product_id: str) -> dict:
         with open(DATA_DIR.joinpath("summaries", "pros-cons", f"{product_id}.json"), "r") as f:
             pros_cons = json.load(f)
             memory = _get_conv_mem_buf(product_id)
-            memory.save_context({"question": query}, {"answer": pros_cons})
+            memory.save_context({"question": query}, {"answer": json.dumps(pros_cons)})
             return pros_cons
     except FileNotFoundError:
         pass
