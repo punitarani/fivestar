@@ -12,14 +12,14 @@ AMAZON_PRODUCT_BASE_URL = "https://www.amazon.com/dp/"
 DATA_DIR = Path(__file__).parent.parent.joinpath("data")
 
 
-async def get_amazon_product_info(product_id: str) -> dict:
+async def get_product_info(product_id: str) -> dict:
     """
     Get Product Information from Amazon.
     :param product_id: Product ID to lookup.
     :return: Product information.
     """
     url = "https://amazon23.p.rapidapi.com/product-details"
-    querystring = {"asin": product_id}
+    querystring = {"asin": product_id, "country": "US"}
 
     headers = {
         "X-RapidAPI-Key": os.getenv("RAPID_API_KEY"),
@@ -28,23 +28,24 @@ async def get_amazon_product_info(product_id: str) -> dict:
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers=headers, params=querystring, timeout=20)
+            response = await client.get(url, headers=headers, params=querystring, timeout=30)
         data = json.loads(response.content).get("result")[0]
         info = {
             "title": data.get("title", product_id),
             "description": data.get("description", ""),
             "features": data.get("feature_bullets", []),
         }
-        with open(DATA_DIR.joinpath(f"info/{product_id}.json"), "w") as f:
-            json.dump(info, f)
-        return info
     except Exception as error:
         error_msg = f"Unable to get product info for {product_id}"
         print(error_msg)
         raise ValueError(error_msg) from error
 
+    with open(DATA_DIR.joinpath(f"info/{product_id}.json"), "w") as f:
+        json.dump(info, f)
+    return info
 
-async def load_amazon_product_info(product_id: str) -> dict:
+
+async def load_product_info(product_id: str) -> dict:
     """
     Load Product Information from a json file.
     :param product_id: Product ID to lookup.
@@ -54,7 +55,7 @@ async def load_amazon_product_info(product_id: str) -> dict:
         with open(DATA_DIR.joinpath(f"info/{product_id}.json"), "r") as f:
             return json.load(f)
     except FileNotFoundError:
-        return await get_amazon_product_info(product_id)
+        return await get_product_info(product_id)
 
 
 async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFrame:
@@ -120,5 +121,5 @@ async def _get_product_reviews_page(product_id: str, page: int = 1, sort_by: str
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers, params=querystring, timeout=20)
+        response = await client.get(url, headers=headers, params=querystring, timeout=30)
     return json.loads(response.content)
