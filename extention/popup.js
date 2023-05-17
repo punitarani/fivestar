@@ -1,21 +1,13 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const quoteElement = document.getElementById("quote");
-    const urlElement = document.getElementById("url");
     const userInput = document.getElementById("user-input");
     const sendButton = document.getElementById("send-button");
     const chatHistory = document.getElementById("chat-history");
     const productSummaryElement = document.getElementById("product-summary");
-    const productTitleElement = document.getElementById("product-title");  // new line
+    const productTitleElement = document.getElementById("product-title");
 
-    // Fetch a new quote when the popup is opened
-    fetchNewQuote();
-
-    // Get the current tab's URL and display it in the popup
+    // Get the current tab's URL and fetch the product title and summary
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         const currentUrl = tabs[0].url;
-        urlElement.textContent = currentUrl;
-
-        // Fetch the product title and summary when the popup is opened
         fetchProductTitle(currentUrl);
         fetchProductSummary(currentUrl);
     });
