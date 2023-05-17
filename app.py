@@ -59,6 +59,9 @@ async def app():
         cons = [f"👎 {con}" for con in cons]
 
         st.subheader("Pros")
+        if not pros and not cons:
+            st.write("No pros and cons found.")
+            st.stop()
         for pro in pros:
             st.write(pro)
         st.subheader("Cons")
