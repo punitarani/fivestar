@@ -99,7 +99,8 @@ async def chat_with_reviews(product_id: str, query: str) -> str:
     The replies should be relevant to the product reviews provided and concise with relevant information.
     \n\n
     Only answer questions related to the product. 
-    If the question is not related to the product, please respond with: I'm sorry, I don't know the answer to that question.
+    If the question is not related to the product, please respond with the following verbatim: 
+    I'm sorry, I don't know the answer to that question.
     """
 
     result = qa({"question": query})
