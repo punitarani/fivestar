@@ -5,14 +5,11 @@ import asyncio
 import streamlit as st
 
 from fivestar.product_info import load_product_info
-from fivestar.summary import summarize_product, summarize_reviews
+from fivestar.summary import summarize_product, summarize_reviews, get_pros_cons
 from utils import format_amazon_product_url
 
 
 async def app():
-    """
-    Streamlit app.
-    """
     st.title("FiveStar")
 
     # Get Amazon URL input for a product
@@ -49,6 +46,26 @@ async def app():
         st.write(product_reviews)
     except Exception as error:
         st.error(f"Unable to load product reviews for {product_id}. {error}")
+
+    # Load product pros and cons
+    try:
+        with st.spinner("Analyzing product pros and cons..."):
+            pros_cons = await get_pros_cons(product_id)
+
+        # Format the JSON output {"pros": [], "cons": []} a list of strings
+        pros = pros_cons.get("pros", [])
+        cons = pros_cons.get("cons", [])
+        pros = [f"👍 {pro}" for pro in pros]
+        cons = [f"👎 {con}" for con in cons]
+
+        st.subheader("Pros")
+        for pro in pros:
+            st.write(pro)
+        st.subheader("Cons")
+        for cons in cons:
+            st.write(cons)
+    except Exception as error:
+        st.error(f"Unable to load pros and cons for {product_id}. {error}")
 
 
 if __name__ == "__main__":
