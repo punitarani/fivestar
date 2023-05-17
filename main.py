@@ -19,6 +19,17 @@ app.add_middleware(
 )
 
 
+@app.get("/info")
+async def product_info_handler(product_id: str):
+    """
+    Get product information.
+    :param product_id: Product ID to lookup.
+    :return: Product information.
+    """
+    product_info = await load_product_info(product_id)
+    return product_info
+
+
 @app.get("/summarize-product")
 async def summarize_product_handler(product_id: str):
     """
