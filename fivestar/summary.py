@@ -2,15 +2,18 @@
 
 import json
 
+from langchain import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
+from tenacity import retry, stop_after_attempt
 
 from fivestar.product_info import load_product_info, load_product_reviews
 from fivestar.store import vectorstore
 from . import DATA_DIR
 
-llm_3 = ChatOpenAI(model_name="gpt-3.5-turbo")
+llm_3 = OpenAI(model_name="text-davinci-003")
+llm_3_5 = ChatOpenAI(model_name="gpt-3.5-turbo")
 llm_4 = ChatOpenAI(model_name="gpt-4")
 
 buffers = {}
@@ -29,9 +32,10 @@ async def summarize_product(product_id: str) -> str:
     Please provide a comprehensive summary of the product. 
     What are its main features and benefits? 
     Provide a brief overview of the product's specifications. 
-    Do not include any customer reviews in your summary. 
-    Provide an unbiased summary of the product based on the information provided on the product page. 
-    Describe the product as if you were explaining it to a friend. 
+    Provide an unbiased summary of the product based on the information provided. 
+    Describe the product as if you were explaining it to a friend but without opinion or bias. 
+    It should be written in complete sentences and formatted as if you were writing for a company's website.
+    The response should be no more than 3-4 sentences.
     """
 
     try:
@@ -71,6 +75,8 @@ async def summarize_reviews(product_id: str) -> str:
     What improvements or changes do customers commonly suggest for this product? 
     Finally, based on these reviews, would you say the product is worth buying? 
     Provide all this information in a concise yet comprehensive summary only based on the reviews provided.
+    It should be written in complete sentences and formatted as if you were writing for a company's website.
+    The response should be no more than 3-4 sentences.
     """
 
     try:
@@ -93,6 +99,7 @@ async def summarize_reviews(product_id: str) -> str:
     return summary
 
 
+@retry(stop=stop_after_attempt(3))
 async def get_pros_cons(product_id: str) -> dict:
     """
     Get pros and cons of product.
@@ -103,7 +110,7 @@ async def get_pros_cons(product_id: str) -> dict:
     await load_product_reviews(product_id)
 
     query = """
-    Please provide a comprehensive list of 5 pros and cons each for the product. 
+    Please provide a comprehensive list of up to 5 pros and cons each for the product. 
     What are the positive and negative aspects of this product as expressed in customer reviews? 
     Provide all this information in a concise yet comprehensive list only based on the reviews provided.
     You need to respond to this question in JSON format with the following structure:
@@ -127,6 +134,7 @@ async def get_pros_cons(product_id: str) -> dict:
 
     result = qa({"question": query})
     pros_cons = result["answer"]
+    print(f"Pros and cons for {product_id}: {pros_cons}")
     pros_cons = json.loads(pros_cons)
 
     with open(DATA_DIR.joinpath("summaries", "pros-cons", f"{product_id}.json"), "w") as f:
@@ -171,7 +179,7 @@ def _get_conv_mem_buf(product_id: str) -> ConversationBufferMemory:
     return buffers[product_id]
 
 
-def _get_qa_chain(product_id, llm=llm_3):
+def _get_qa_chain(product_id, llm=llm_3_5):
     """
     Get QA chain.
     :param product_id: Product ID to lookup.
