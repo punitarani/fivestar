@@ -10,6 +10,12 @@ from utils import format_amazon_product_url
 
 
 async def app():
+    st.set_page_config(
+        page_title="FiveStar",
+        page_icon="🌟",
+        layout="wide",
+    )
+
     st.title("FiveStar")
 
     # Get Amazon URL input for a product
