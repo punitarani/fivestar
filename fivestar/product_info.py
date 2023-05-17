@@ -47,7 +47,7 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
     :param num_pages: Number of pages to get. Each page contains 10 reviews.
     :return: DataFrame with the product reviews.
 
-    Note: Saves the product reviews to a parquet file in /data/reviews/{product_id}.parquet
+    Note: Saves the product reviews to a csv file in /data/reviews/{product_id}.csv
     """
     tasks = []
     num_half_pages = num_pages // 2
@@ -68,19 +68,19 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
     })
     df = df[["review_id", "star_rating", "review_headline", "review_body"]]
 
-    # save the reviews to a parquet file
-    df.to_parquet(f"data/reviews/{product_id}.parquet", index=False)
+    # save the reviews to a csv file
+    df.to_csv(f"data/reviews/{product_id}.csv", index=False)
 
     return df
 
 
 def load_product_reviews(product_id: str) -> pd.DataFrame:
     """
-    Load product reviews from a parquet file.
+    Load product reviews from a csv file.
     :param product_id: Product ID to lookup.
     :return: DataFrame with the product reviews.
     """
-    return pd.read_parquet(f"data/reviews/{product_id}.parquet")
+    return pd.read_csv(f"data/reviews/{product_id}.csv")
 
 
 async def _get_product_reviews_page(product_id: str, page: int = 1, sort_by: str = "helpful") -> dict:
