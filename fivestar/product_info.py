@@ -34,14 +34,14 @@ async def get_product_info(product_id: str) -> dict:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(url, headers=headers, params=querystring, timeout=30)
-        data = json.loads(response.content).get("result")[0]
+        data = json.loads(response.content).get("result", [])[0]
         info = {
             "title": data.get("title", product_id),
             "description": data.get("description", ""),
             "features": data.get("feature_bullets", []),
         }
     except Exception as error:
-        error_msg = f"Unable to get product info for {product_id}"
+        error_msg = f"Unable to get product info for {product_id}. {error}"
         print(error_msg)
         raise ValueError(error_msg) from error
 

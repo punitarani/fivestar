@@ -1,14 +1,18 @@
 """app.py"""
 
-from time import sleep
+import asyncio
 
 import streamlit as st
 
+from fivestar.product_info import load_product_info
+from fivestar.summary import summarize_product, summarize_reviews
 from utils import format_amazon_product_url
 
 
-def app():
-    """Streamlit App"""
+async def app():
+    """
+    Streamlit app.
+    """
     st.title("FiveStar")
 
     # Get Amazon URL input for a product
@@ -23,11 +27,28 @@ def app():
         st.error("Invalid URL format. URL should contain '/dp/' path segment.")
         st.stop()
 
-    # TODO: Implement the rest of the app
-    with st.spinner("Loading product reviews..."):
-        sleep(2)
-    st.write(f"Product Reviews for {product_url}")
+    # Get the product id
+    product_id = product_url.split("/dp/")[1].split("/")[0]
+
+    # Load product information
+    try:
+        with st.spinner("Loading product information..."):
+            product_summary = await summarize_product(product_id)
+            product_info = await load_product_info(product_id)
+        st.subheader(product_info.get("title", "Product Information"))
+        st.write(product_summary)
+    except Exception as error:
+        st.error(f"Unable to load product information for {product_id}. {error}")
+
+    # Load product reviews
+    try:
+        with st.spinner("Loading product reviews..."):
+            product_reviews = await summarize_reviews(product_id)
+        st.subheader("Product Reviews")
+        st.write(product_reviews)
+    except Exception as error:
+        st.error(f"Unable to load product reviews for {product_id}. {error}")
 
 
 if __name__ == "__main__":
-    app()
+    asyncio.run(app())
