@@ -3,7 +3,6 @@
 import asyncio
 import json
 import os
-from datetime import datetime
 from pathlib import Path
 
 import httpx
@@ -34,17 +33,14 @@ async def get_product_info(product_id: str) -> dict:
     }
 
     try:
-        print("Start time for get_product_info: ", datetime.now())
         async with httpx.AsyncClient() as client:
             response = await client.get(url, headers=headers, params=querystring, timeout=30)
-        print("End time for get_product_info: ", datetime.now())
         data = json.loads(response.content).get("result", [])[0]
         info = {
             "title": data.get("title", product_id),
             "description": data.get("description", ""),
             "features": data.get("feature_bullets", []),
         }
-        print("Return time for get_product_info: ", datetime.now())
     except Exception as error:
         error_msg = f"Unable to get product info for {product_id}. {error}"
         print(error_msg)
