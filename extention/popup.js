@@ -4,12 +4,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const chatHistory = document.getElementById("chat-history");
     const productSummaryElement = document.getElementById("product-summary");
     const productTitleElement = document.getElementById("product-title");
+    const productReviewsElement = document.getElementById("product-reviews");
+    const productProsElement = document.getElementById("product-pros");
+    const productConsElement = document.getElementById("product-cons");
 
-    // Get the current tab's URL and fetch the product title and summary
+    // Get the current tab's URL and fetch the product info, summary, reviews, pros, and cons
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         const currentUrl = tabs[0].url;
         fetchProductTitle(currentUrl);
         fetchProductSummary(currentUrl);
+        fetchProductReviews(currentUrl);
+        fetchProductProsCons(currentUrl);
     });
 
     // Function to fetch a new quote
@@ -41,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(`http://localhost:8000/info?product_id=${productId}`)
             .then(response => response.json())
             .then(data => {
-                console.log(data);
+                console.log("Product info: ", data);
                 productTitleElement.textContent = data.title;
                 // If description and features are available, display them
                 if (data.description) {
@@ -67,6 +72,7 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(`http://localhost:8000/summarize-product?product_id=${productId}`)
             .then(response => response.json())
             .then(data => {
+                console.log("Summary: ", data)
                 // Overwrite the description and features with the summary
                 productSummaryElement.textContent = data.summary;
             })
@@ -79,6 +85,56 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     productSummaryElement.textContent = '(Failed to summarize)';
                 }
+                console.error(error);
+            });
+    }
+
+    // Function to fetch product reviews
+    function fetchProductReviews(url) {
+        const productId = extractProductId(url);
+        fetch(`http://localhost:8000/summarize-reviews?product_id=${productId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Reviews: ", data);
+                productReviewsElement.textContent = data.summary;
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    }
+
+    // Function to fetch product pros and cons
+    function fetchProductProsCons(url) {
+        const productId = extractProductId(url);
+        fetch(`http://localhost:8000/pros-cons?product_id=${productId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Pros and cons: ", data);
+                if (data.pros && data.pros.length > 0) {
+                    productProsElement.innerHTML = '<h3>Pros:</h3>';
+                    for (const pro of data.pros) {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = pro;
+                        productProsElement.appendChild(listItem);
+                    }
+                } else {
+                    productProsElement.textContent = 'No pros found';
+                }
+
+                if (data.cons && data.cons.length > 0) {
+                    productConsElement.innerHTML = '<h3>Cons:</h3>';
+                    for (const con of data.cons) {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = con;
+                        productConsElement.appendChild(listItem);
+                    }
+                } else {
+                    productConsElement.textContent = 'No cons found';
+                }
+            })
+            .catch(error => {
+                productProsElement.textContent = 'Failed to fetch product pros';
+                productConsElement.textContent = 'Failed to fetch product cons';
                 console.error(error);
             });
     }
