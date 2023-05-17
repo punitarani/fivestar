@@ -8,7 +8,8 @@ from fivestar.product_info import load_product_info, load_product_reviews
 from fivestar.store import vectorstore
 from . import DATA_DIR
 
-llm = ChatOpenAI(model_name="gpt-3.5-turbo")
+llm_3 = ChatOpenAI(model_name="gpt-3.5-turbo")
+llm_4 = ChatOpenAI(model_name="gpt-4")
 
 buffers = {}
 qa_chains = {}
@@ -20,15 +21,7 @@ async def summarize_product(product_id: str) -> str:
     :param product_id: Product ID to lookup.
     :return: Summary of product reviews.
     """
-    try:
-        with open(DATA_DIR.joinpath("summaries", "info", f"{product_id}.txt"), "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        pass
-
     await load_product_info(product_id)
-
-    qa = _get_qa_chain(product_id)
 
     query = """
     Please provide a comprehensive summary of the product. 
@@ -38,6 +31,18 @@ async def summarize_product(product_id: str) -> str:
     Provide an unbiased summary of the product based on the information provided on the product page. 
     Describe the product as if you were explaining it to a friend. 
     """
+
+    try:
+        with open(DATA_DIR.joinpath("summaries", "info", f"{product_id}.txt"), "r") as f:
+            summary = f.read()
+            memory = _get_conv_mem_buf(product_id)
+            memory.save_context({"question": query}, {"answer": summary})
+            return summary
+    except FileNotFoundError:
+        pass
+
+    qa = _get_qa_chain(product_id)
+
     result = qa({"question": query})
     summary = result["answer"]
 
@@ -53,15 +58,7 @@ async def summarize_reviews(product_id: str) -> str:
     :param product_id: Product ID to lookup.
     :return: Summary of product reviews.
     """
-    try:
-        with open(DATA_DIR.joinpath("summaries", "reviews", f"{product_id}.txt"), "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        pass
-
     await load_product_reviews(product_id)
-
-    qa = _get_qa_chain(product_id)
 
     query = """
     Please provide a comprehensive summary of the product reviews. 
@@ -73,6 +70,18 @@ async def summarize_reviews(product_id: str) -> str:
     Finally, based on these reviews, would you say the product is worth buying? 
     Provide all this information in a concise yet comprehensive summary only based on the reviews provided.
     """
+
+    try:
+        with open(DATA_DIR.joinpath("summaries", "reviews", f"{product_id}.txt"), "r") as f:
+            summary = f.read()
+            memory = _get_conv_mem_buf(product_id)
+            memory.save_context({"question": query}, {"answer": summary})
+            return summary
+    except FileNotFoundError:
+        pass
+
+    qa = _get_qa_chain(product_id)
+
     result = qa({"question": query})
     summary = result["answer"]
 
@@ -118,7 +127,7 @@ def _get_conv_mem_buf(product_id: str) -> ConversationBufferMemory:
     return buffers[product_id]
 
 
-def _get_qa_chain(product_id):
+def _get_qa_chain(product_id, llm=llm_3):
     """
     Get QA chain.
     :param product_id: Product ID to lookup.
