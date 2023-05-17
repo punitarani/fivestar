@@ -10,7 +10,8 @@
   },
   "permissions": [
     "activeTab",
-    "tabs"
+    "tabs",
+    "http://localhost:8000/"
   ],
   "browser_action": {
     "default_popup": "popup.html",
@@ -21,16 +22,22 @@
     }
   },
   "background": {
-    "scripts": ["background.js"],
+    "scripts": [
+      "background.js"
+    ],
     "persistent": false
   },
   "content_scripts": [
     {
-      "matches": ["https://www.amazon.com/*"],
-      "js": ["content.js"]
+      "matches": [
+        "https://www.amazon.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
     }
   ],
   "web_accessible_resources": [
     "styles.css"
-  ]  
+  ]
 }

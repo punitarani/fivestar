@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const userInput = document.getElementById("user-input");
     const sendButton = document.getElementById("send-button");
     const chatHistory = document.getElementById("chat-history");
+    const productSummaryElement = document.getElementById("product-summary");
 
     // Fetch a new quote when the popup is opened
     fetchNewQuote();
@@ -12,6 +13,9 @@ document.addEventListener("DOMContentLoaded", function () {
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         const currentUrl = tabs[0].url;
         urlElement.textContent = currentUrl;
+
+        // Fetch a new product summary when the popup is opened
+        fetchProductSummary(currentUrl);
     });
 
     // Function to fetch a new quote
@@ -23,6 +27,30 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(error => {
                 quoteElement.textContent = "Failed to fetch quote";
+                console.error(error);
+            });
+    }
+
+    function extractProductId(url) {
+        const pattern = /\/dp\/([A-Z0-9]{10})/;
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        } else {
+            return null;
+        }
+    }
+
+    // Function to fetch a new product summary
+    function fetchProductSummary(url) {
+        const productId = extractProductId(url);
+        fetch(`http://localhost:8000/summarize-product?product_id=${productId}`)
+            .then(response => response.json())
+            .then(data => {
+                productSummaryElement.textContent = data.summary;
+            })
+            .catch(error => {
+                productSummaryElement.textContent = "Failed to fetch product summary";
                 console.error(error);
             });
     }
