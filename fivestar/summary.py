@@ -35,6 +35,7 @@ async def summarize_product(product_id: str) -> str:
     Provide an unbiased summary of the product based on the information provided. 
     Describe the product as if you were explaining it to a friend but without opinion or bias. 
     It should be written in complete sentences and formatted as if you were writing for a company's website.
+    The response should be no more than 3-4 sentences.
     """
 
     try:
@@ -75,6 +76,7 @@ async def summarize_reviews(product_id: str) -> str:
     Finally, based on these reviews, would you say the product is worth buying? 
     Provide all this information in a concise yet comprehensive summary only based on the reviews provided.
     It should be written in complete sentences and formatted as if you were writing for a company's website.
+    The response should be no more than 3-4 sentences.
     """
 
     try:
@@ -108,7 +110,7 @@ async def get_pros_cons(product_id: str) -> dict:
     await load_product_reviews(product_id)
 
     query = """
-    Please provide a comprehensive list of 5 pros and cons each for the product. 
+    Please provide a comprehensive list of up to 5 pros and cons each for the product. 
     What are the positive and negative aspects of this product as expressed in customer reviews? 
     Provide all this information in a concise yet comprehensive list only based on the reviews provided.
     You need to respond to this question in JSON format with the following structure:
