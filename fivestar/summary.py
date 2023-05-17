@@ -16,6 +16,8 @@ llm = ChatOpenAI(model_name="gpt-4")
 embeddings = OpenAIEmbeddings()
 summarize_chain = load_summarize_chain(llm, chain_type="map_reduce")
 
+buffers = {}
+
 
 async def summarize_product(product_id: str) -> str:
     """
@@ -43,7 +45,7 @@ async def summarize_reviews(product_id: str) -> str:
 
     await load_product_reviews(product_id)
 
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    memory = _get_conv_mem_buf(product_id)
     qa = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever(), memory=memory)
 
     query = """
@@ -56,3 +58,39 @@ async def summarize_reviews(product_id: str) -> str:
     """
     result = qa({"question": query})
     return result["answer"]
+
+
+async def chat_with_reviews(product_id: str, query: str) -> str:
+    """
+    Chat with product reviews.
+    :param product_id: Product ID to lookup.
+    :param query: Query to ask.
+    :return: Response to query.
+    """
+    await load_product_reviews(product_id)
+
+    memory = _get_conv_mem_buf(product_id)
+    qa = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever(), memory=memory)
+
+    # Add following moderation to prevent irrelevant questions
+    query += """
+    \n\nAnswer the question(s) based on the product reviews provided only.
+    The replies should be relevant to the product reviews provided and concise with relevant information.
+    \n\n
+    Only answer questions related to the product. 
+    If the question is not related to the product, please respond with: I'm sorry, I don't know the answer to that question.
+    """
+
+    result = qa({"question": query})
+    return result["answer"]
+
+
+def _get_conv_mem_buf(product_id: str) -> ConversationBufferMemory:
+    """
+    Get conversation memory buffer.
+    :param product_id: Product ID to lookup.
+    :return: Conversation memory buffer.
+    """
+    if product_id not in buffers:
+        buffers[product_id] = ConversationBufferMemory(memory_key=product_id, return_messages=True)
+    return buffers[product_id]
