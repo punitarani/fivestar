@@ -1,11 +1,22 @@
 """FastAPI app entry point."""
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from fivestar.product_info import load_product_info
 from fivestar.summary import summarize_product, summarize_reviews
 
 app = FastAPI()
+
+# Add CORS middleware
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/summarize-product")
