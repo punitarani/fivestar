@@ -7,6 +7,9 @@ from pathlib import Path
 
 import httpx
 import pandas as pd
+from langchain.docstore.document import Document
+
+from fivestar.store import vectorstore
 
 AMAZON_PRODUCT_BASE_URL = "https://www.amazon.com/dp/"
 DATA_DIR = Path(__file__).parent.parent.joinpath("data")
@@ -74,7 +77,7 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
         tasks.append(_get_product_reviews_page(product_id, page + num_half_pages, "recent"))
 
     reviews = await asyncio.gather(*tasks)
-    reviews_flat = [item for sublist in reviews for item in sublist.get("result")]
+    reviews_flat = [item for sublist in reviews for item in sublist.get("result", [])]
 
     # map the response to your desired DataFrame structure
     df = pd.DataFrame(reviews_flat)
@@ -86,8 +89,15 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
     })
     df = df[["review_id", "star_rating", "review_headline", "review_body"]]
 
+    # Create docs from the dataframe and store them in the vectorstore
+    docs = [
+        Document(page_content=review_body, metadata={"product_id": product_id})
+        for review_body in df["review_body"].tolist()
+    ]
+    vectorstore.add_documents(docs)
+
     # save the reviews to a csv file
-    df.to_csv(DATA_DIR.joinpath("reviews/{product_id}.csv"), index=False)
+    df.to_csv(DATA_DIR.joinpath(f"reviews/{product_id}.csv"), index=False)
 
     return df
 
@@ -99,7 +109,7 @@ async def load_product_reviews(product_id: str) -> pd.DataFrame:
     :return: DataFrame with the product reviews.
     """
     try:
-        pd.read_csv(DATA_DIR.joinpath("reviews/{product_id}.csv"))
+        pd.read_csv(DATA_DIR.joinpath(f"reviews/{product_id}.csv"))
     except FileNotFoundError:
         return await get_product_reviews(product_id)
 
@@ -113,7 +123,7 @@ async def _get_product_reviews_page(product_id: str, page: int = 1, sort_by: str
     :return: Dictionary with the product reviews.
     """
     url = "https://amazon23.p.rapidapi.com/reviews"
-    querystring = {"asin": product_id, "sort_by": sort_by, "page": str(page)}
+    querystring = {"asin": product_id, "sort_by": sort_by, "page": str(page), "country": "US"}
 
     headers = {
         "X-RapidAPI-Key": os.getenv("RAPID_API_KEY"),
