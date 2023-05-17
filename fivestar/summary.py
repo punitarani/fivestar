@@ -8,7 +8,7 @@ from fivestar.product_info import load_product_info, load_product_reviews
 from fivestar.store import vectorstore
 from . import DATA_DIR
 
-llm = ChatOpenAI(model_name="gpt-4")
+llm = ChatOpenAI(model_name="gpt-3.5-turbo")
 
 buffers = {}
 qa_chains = {}
@@ -21,7 +21,7 @@ async def summarize_product(product_id: str) -> str:
     :return: Summary of product reviews.
     """
     try:
-        with open(DATA_DIR.joinpath("summaries", f"{product_id}.txt"), "r") as f:
+        with open(DATA_DIR.joinpath("summaries", "info", f"{product_id}.txt"), "r") as f:
             return f.read()
     except FileNotFoundError:
         pass
@@ -41,7 +41,7 @@ async def summarize_product(product_id: str) -> str:
     result = qa({"question": query})
     summary = result["answer"]
 
-    with open(DATA_DIR.joinpath("summaries", f"{product_id}.txt"), "w") as f:
+    with open(DATA_DIR.joinpath("summaries", "info", f"{product_id}.txt"), "w") as f:
         f.write(summary)
 
     return summary
@@ -53,6 +53,11 @@ async def summarize_reviews(product_id: str) -> str:
     :param product_id: Product ID to lookup.
     :return: Summary of product reviews.
     """
+    try:
+        with open(DATA_DIR.joinpath("summaries", "reviews", f"{product_id}.txt"), "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        pass
 
     await load_product_reviews(product_id)
 
@@ -69,7 +74,12 @@ async def summarize_reviews(product_id: str) -> str:
     Provide all this information in a concise yet comprehensive summary only based on the reviews provided.
     """
     result = qa({"question": query})
-    return result["answer"]
+    summary = result["answer"]
+
+    with open(DATA_DIR.joinpath("summaries", "reviews", f"{product_id}.txt"), "w") as f:
+        f.write(summary)
+
+    return summary
 
 
 async def chat_with_reviews(product_id: str, query: str) -> str:
