@@ -74,7 +74,7 @@ async def load_product_info(product_id: str) -> dict:
     return data
 
 
-async def get_product_reviews(product_id: str, num_pages: int = 4) -> pd.DataFrame:
+async def get_product_reviews(product_id: str, num_pages: int = 6) -> pd.DataFrame:
     """
     Get product reviews from Amazon.
     :param product_id: Product ID to lookup.
