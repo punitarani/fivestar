@@ -2,16 +2,18 @@
 
 import json
 
+from langchain import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
+from tenacity import retry, stop_after_attempt
 
 from fivestar.product_info import load_product_info, load_product_reviews
 from fivestar.store import vectorstore
 from . import DATA_DIR
 
-llm_3 = ChatOpenAI(model_name="gpt-3.5-turbo")
+llm_3 = OpenAI()
+llm_3_5 = ChatOpenAI(model_name="gpt-3.5-turbo")
 llm_4 = ChatOpenAI(model_name="gpt-4")
 
 buffers = {}
@@ -30,9 +32,8 @@ async def summarize_product(product_id: str) -> str:
     Please provide a comprehensive summary of the product. 
     What are its main features and benefits? 
     Provide a brief overview of the product's specifications. 
-    Do not include any customer reviews in your summary. 
-    Provide an unbiased summary of the product based on the information provided on the product page. 
-    Describe the product as if you were explaining it to a friend but without opinion or bias.
+    Provide an unbiased summary of the product based on the information provided. 
+    Describe the product as if you were explaining it to a friend but without opinion or bias. 
     It should be written in complete sentences and formatted as if you were writing for a company's website.
     """
 
@@ -96,7 +97,7 @@ async def summarize_reviews(product_id: str) -> str:
     return summary
 
 
-@retry(retry=retry_if_exception_type(json.JSONDecodeError), stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(3))
 async def get_pros_cons(product_id: str) -> dict:
     """
     Get pros and cons of product.
