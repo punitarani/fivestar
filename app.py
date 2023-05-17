@@ -34,9 +34,9 @@ async def app():
     try:
         with st.spinner("Loading product information..."):
             product_info = await load_product_info(product_id)
+        st.subheader(product_info.get("title", "Product Information"))
         with st.spinner("Analyzing product information..."):
             product_summary = await summarize_product(product_id)
-        st.subheader(product_info.get("title", "Product Information"))
         st.write(product_summary)
     except Exception as error:
         st.error(f"Unable to load product information for {product_id}. {error}")
