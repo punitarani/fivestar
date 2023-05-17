@@ -8,6 +8,7 @@ from pathlib import Path
 import httpx
 import pandas as pd
 from langchain.docstore.document import Document
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from fivestar.store import vectorstore
 
@@ -74,6 +75,7 @@ async def load_product_info(product_id: str) -> dict:
     return data
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
 async def get_product_reviews(product_id: str, num_pages: int = 6) -> pd.DataFrame:
     """
     Get product reviews from Amazon.
