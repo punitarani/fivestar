@@ -3,11 +3,13 @@
 import asyncio
 import json
 import os
+from pathlib import Path
 
 import httpx
 import pandas as pd
 
 AMAZON_PRODUCT_BASE_URL = "https://www.amazon.com/dp/"
+DATA_DIR = Path(__file__).parent.parent.joinpath("data")
 
 
 async def get_amazon_product_info(product_id: str) -> dict:
@@ -33,7 +35,7 @@ async def get_amazon_product_info(product_id: str) -> dict:
             "description": data.get("description", ""),
             "features": data.get("feature_bullets", []),
         }
-        with open(f"data/info/{product_id}.json", "w") as f:
+        with open(DATA_DIR.joinpath(f"info/{product_id}.json"), "w") as f:
             json.dump(info, f)
         return info
     except Exception as error:
@@ -49,7 +51,7 @@ async def load_amazon_product_info(product_id: str) -> dict:
     :return: Product information.
     """
     try:
-        with open(f"data/info/{product_id}.json", "r") as f:
+        with open(DATA_DIR.joinpath(f"info/{product_id}.json"), "r") as f:
             return json.load(f)
     except FileNotFoundError:
         return await get_amazon_product_info(product_id)
@@ -84,7 +86,7 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
     df = df[["review_id", "star_rating", "review_headline", "review_body"]]
 
     # save the reviews to a csv file
-    df.to_csv(f"data/reviews/{product_id}.csv", index=False)
+    df.to_csv(DATA_DIR.joinpath("reviews/{product_id}.csv"), index=False)
 
     return df
 
@@ -96,7 +98,7 @@ async def load_product_reviews(product_id: str) -> pd.DataFrame:
     :return: DataFrame with the product reviews.
     """
     try:
-        pd.read_csv(f"data/reviews/{product_id}.csv")
+        pd.read_csv(DATA_DIR.joinpath("reviews/{product_id}.csv"))
     except FileNotFoundError:
         return await get_product_reviews(product_id)
 
