@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(response => response.json())
             .then(data => {
                 console.log("Reviews: ", data);
-                productReviewsElement.textContent = data.summary;
+                productReviewsElement.textContent = data.reviews;
             })
             .catch(error => {
                 console.error(error);
