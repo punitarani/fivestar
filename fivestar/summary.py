@@ -1,15 +1,14 @@
 """fivestar.summary.py"""
 
 from langchain.chains import ConversationalRetrievalChain
-from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 
 from fivestar.product_info import load_product_info, load_product_reviews
 from fivestar.store import vectorstore
+from . import DATA_DIR
 
 llm = ChatOpenAI(model_name="gpt-4")
-summarize_chain = load_summarize_chain(llm, chain_type="map_reduce")
 
 buffers = {}
 qa_chains = {}
@@ -21,6 +20,12 @@ async def summarize_product(product_id: str) -> str:
     :param product_id: Product ID to lookup.
     :return: Summary of product reviews.
     """
+    try:
+        with open(DATA_DIR.joinpath("summaries", f"{product_id}.txt"), "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        pass
+
     await load_product_info(product_id)
 
     qa = _get_qa_chain(product_id)
@@ -34,7 +39,12 @@ async def summarize_product(product_id: str) -> str:
     Describe the product as if you were explaining it to a friend. 
     """
     result = qa({"question": query})
-    return result["answer"]
+    summary = result["answer"]
+
+    with open(DATA_DIR.joinpath("summaries", f"{product_id}.txt"), "w") as f:
+        f.write(summary)
+
+    return summary
 
 
 async def summarize_reviews(product_id: str) -> str:
