@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const sendButton = document.getElementById("send-button");
     const chatHistory = document.getElementById("chat-history");
     const productSummaryElement = document.getElementById("product-summary");
+    const productTitleElement = document.getElementById("product-title");  // new line
 
     // Fetch a new quote when the popup is opened
     fetchNewQuote();
@@ -14,7 +15,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const currentUrl = tabs[0].url;
         urlElement.textContent = currentUrl;
 
-        // Fetch a new product summary when the popup is opened
+        // Fetch the product title and summary when the popup is opened
+        fetchProductTitle(currentUrl);
         fetchProductSummary(currentUrl);
     });
 
@@ -39,6 +41,21 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             return null;
         }
+    }
+
+    // Function to fetch the product title
+    function fetchProductTitle(url) {
+        const productId = extractProductId(url);
+        fetch(`http://localhost:8000/info?product_id=${productId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                productTitleElement.textContent = data.title;
+            })
+            .catch(error => {
+                productTitleElement.textContent = "Product Information";
+                console.error(error);
+            });
     }
 
     // Function to fetch a new product summary
