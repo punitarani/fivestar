@@ -12,7 +12,7 @@ from fivestar.product_info import load_product_info, load_product_reviews
 from fivestar.store import vectorstore
 from . import DATA_DIR
 
-llm_3 = OpenAI()
+llm_3 = OpenAI(model_name="text-davinci-003")
 llm_3_5 = ChatOpenAI(model_name="gpt-3.5-turbo")
 llm_4 = ChatOpenAI(model_name="gpt-4")
 
@@ -177,7 +177,7 @@ def _get_conv_mem_buf(product_id: str) -> ConversationBufferMemory:
     return buffers[product_id]
 
 
-def _get_qa_chain(product_id, llm=llm_3):
+def _get_qa_chain(product_id, llm=llm_3_5):
     """
     Get QA chain.
     :param product_id: Product ID to lookup.
