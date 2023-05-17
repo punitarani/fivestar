@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from fivestar.product_info import load_product_info
-from fivestar.summary import summarize_product, summarize_reviews
+from fivestar.summary import summarize_product, summarize_reviews, chat_with_reviews
 
 app = FastAPI()
 
@@ -56,6 +56,20 @@ async def summarize_reviews_handler(product_id: str):
     reviews_summary = await summarize_reviews(product_id)
     return {
         "reviews": reviews_summary,
+    }
+
+
+@app.get("/chat")
+async def chat_with_reviews_handler(product_id: str, query: str):
+    """
+    Chat with product reviews.
+    :param product_id: Product ID to lookup.
+    :param query: Query to ask.
+    :return: Response to query.
+    """
+    response = await chat_with_reviews(product_id, query)
+    return {
+        "response": response,
     }
 
 
