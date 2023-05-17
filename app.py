@@ -33,8 +33,9 @@ async def app():
     # Load product information
     try:
         with st.spinner("Loading product information..."):
-            product_summary = await summarize_product(product_id)
             product_info = await load_product_info(product_id)
+        with st.spinner("Analyzing product information..."):
+            product_summary = await summarize_product(product_id)
         st.subheader(product_info.get("title", "Product Information"))
         st.write(product_summary)
     except Exception as error:
@@ -42,7 +43,7 @@ async def app():
 
     # Load product reviews
     try:
-        with st.spinner("Loading product reviews..."):
+        with st.spinner("Analyzing product reviews..."):
             product_reviews = await summarize_reviews(product_id)
         st.subheader("Product Reviews")
         st.write(product_reviews)
