@@ -37,7 +37,7 @@
 }
 
 #chat-history {
-    height: 150px;
+    height: 375px;
     overflow-y: scroll;
     border: 1px solid #ccc;
     padding: 10px;
