@@ -138,8 +138,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     function handleBotResponse(userMessage) {
-        // In this example, the bot simply echoes back the user's message
-        addMessage(userMessage, "bot");
+        // Get the current tab's URL
+        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+            const currentUrl = tabs[0].url;
+            const productId = extractProductId(currentUrl);
+
+            // Get response from /chat
+            fetch(`http://localhost:8000/chat?product_id=${productId}&query=${encodeURIComponent(userMessage)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Chat response: ", data);
+                    addMessage(data.response, "bot");
+                })
+                .catch(error => {
+                    console.error(error);
+                    addMessage("Sorry, I encountered an error. Please try again.", "bot");
+                });
+        });
     }
 
     function addMessage(message, sender) {
