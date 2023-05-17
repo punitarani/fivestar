@@ -92,5 +92,5 @@ def _get_conv_mem_buf(product_id: str) -> ConversationBufferMemory:
     :return: Conversation memory buffer.
     """
     if product_id not in buffers:
-        buffers[product_id] = ConversationBufferMemory(memory_key=product_id, return_messages=True)
+        buffers[product_id] = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     return buffers[product_id]
