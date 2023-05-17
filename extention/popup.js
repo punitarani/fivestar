@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Function to fetch the product title
+    // Function to fetch the product title, description and features
     function fetchProductTitle(url) {
         const productId = extractProductId(url);
         fetch(`http://localhost:8000/info?product_id=${productId}`)
@@ -51,6 +51,17 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(data => {
                 console.log(data);
                 productTitleElement.textContent = data.title;
+                // If description and features are available, display them
+                if (data.description) {
+                    productSummaryElement.textContent = data.description;
+                }
+                if (data.features && data.features.length > 0) {
+                    for (const feature of data.features) {
+                        productSummaryElement.textContent += '\n' + feature;
+                    }
+                }
+                // Add a line indicating that a summary is being generated
+                productSummaryElement.textContent += '\n(Summarizing in the background...)';
             })
             .catch(error => {
                 productTitleElement.textContent = "Product Information";
@@ -64,13 +75,22 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(`http://localhost:8000/summarize-product?product_id=${productId}`)
             .then(response => response.json())
             .then(data => {
+                // Overwrite the description and features with the summary
                 productSummaryElement.textContent = data.summary;
             })
             .catch(error => {
-                productSummaryElement.textContent = "Failed to fetch product summary";
+                // Replace the last line with "Failed to summarize"
+                let textContent = productSummaryElement.textContent;
+                let lastNewlineIndex = textContent.lastIndexOf('\n');
+                if (lastNewlineIndex !== -1) {
+                    productSummaryElement.textContent = textContent.substring(0, lastNewlineIndex) + '\n(Failed to summarize)';
+                } else {
+                    productSummaryElement.textContent = '(Failed to summarize)';
+                }
                 console.error(error);
             });
     }
+
 
     sendButton.addEventListener("click", function () {
         const userMessage = userInput.value;
