@@ -28,16 +28,31 @@ async def get_amazon_product_info(product_id: str) -> dict:
         async with httpx.AsyncClient() as client:
             response = await client.get(url, headers=headers, params=querystring)
         data = json.loads(response.content).get("result")[0]
-
-        return {
+        info = {
             "title": data.get("title", product_id),
             "description": data.get("description", ""),
             "features": data.get("feature_bullets", []),
         }
+        with open(f"data/info/{product_id}.json", "w") as f:
+            json.dump(info, f)
+        return info
     except Exception as error:
         error_msg = f"Unable to get product info for {product_id}"
         print(error_msg)
         raise ValueError(error_msg) from error
+
+
+async def load_amazon_product_info(product_id: str) -> dict:
+    """
+    Load Product Information from a json file.
+    :param product_id: Product ID to lookup.
+    :return: Product information.
+    """
+    try:
+        with open(f"data/info/{product_id}.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return await get_amazon_product_info(product_id)
 
 
 async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFrame:
