@@ -103,7 +103,7 @@ async def get_pros_cons(product_id: str) -> dict:
     await load_product_reviews(product_id)
 
     query = """
-    Please provide a comprehensive list of pros and cons for the product. 
+    Please provide a comprehensive list of 5 pros and cons each for the product. 
     What are the positive and negative aspects of this product as expressed in customer reviews? 
     Provide all this information in a concise yet comprehensive list only based on the reviews provided.
     You need to respond to this question in JSON format with the following structure:
