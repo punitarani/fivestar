@@ -14,6 +14,8 @@ from fivestar.store import vectorstore
 AMAZON_PRODUCT_BASE_URL = "https://www.amazon.com/dp/"
 DATA_DIR = Path(__file__).parent.parent.joinpath("data")
 
+loaded_product_vectors = set()
+
 
 async def get_product_info(product_id: str) -> dict:
     """
@@ -61,7 +63,7 @@ async def load_product_info(product_id: str) -> dict:
         return await get_product_info(product_id)
 
 
-async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFrame:
+async def get_product_reviews(product_id: str, num_pages: int = 4) -> pd.DataFrame:
     """
     Get product reviews from Amazon.
     :param product_id: Product ID to lookup.
@@ -78,6 +80,7 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
 
     reviews = await asyncio.gather(*tasks)
     reviews_flat = [item for sublist in reviews for item in sublist.get("result", [])]
+    print(f"Got {len(reviews_flat)} reviews for {product_id}")
 
     # map the response to your desired DataFrame structure
     df = pd.DataFrame(reviews_flat)
@@ -88,13 +91,6 @@ async def get_product_reviews(product_id: str, num_pages: int = 10) -> pd.DataFr
         "review": "review_body"
     })
     df = df[["review_id", "star_rating", "review_headline", "review_body"]]
-
-    # Create docs from the dataframe and store them in the vectorstore
-    docs = [
-        Document(page_content=review_body, metadata={"product_id": product_id})
-        for review_body in df["review_body"].tolist()
-    ]
-    vectorstore.add_documents(docs)
 
     # save the reviews to a csv file
     df.to_csv(DATA_DIR.joinpath(f"reviews/{product_id}.csv"), index=False)
@@ -109,9 +105,20 @@ async def load_product_reviews(product_id: str) -> pd.DataFrame:
     :return: DataFrame with the product reviews.
     """
     try:
-        pd.read_csv(DATA_DIR.joinpath(f"reviews/{product_id}.csv"))
+        df = pd.read_csv(DATA_DIR.joinpath(f"reviews/{product_id}.csv"))
     except FileNotFoundError:
-        return await get_product_reviews(product_id)
+        df = await get_product_reviews(product_id)
+
+    # Create docs from the dataframe and store them in the vectorstore
+    if product_id not in loaded_product_vectors:
+        docs = [
+            Document(page_content=review_body, metadata={"product_id": product_id})
+            for review_body in df["review_body"].tolist()
+        ]
+        vectorstore.add_documents(docs)
+        loaded_product_vectors.add(product_id)
+
+    return df
 
 
 async def _get_product_reviews_page(product_id: str, page: int = 1, sort_by: str = "helpful") -> dict:
