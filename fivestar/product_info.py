@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 import httpx
@@ -14,6 +15,7 @@ from fivestar.store import vectorstore
 AMAZON_PRODUCT_BASE_URL = "https://www.amazon.com/dp/"
 DATA_DIR = Path(__file__).parent.parent.joinpath("data")
 
+loaded_product_info = set()
 loaded_product_vectors = set()
 
 
@@ -32,14 +34,17 @@ async def get_product_info(product_id: str) -> dict:
     }
 
     try:
+        print("Start time for get_product_info: ", datetime.now())
         async with httpx.AsyncClient() as client:
             response = await client.get(url, headers=headers, params=querystring, timeout=30)
+        print("End time for get_product_info: ", datetime.now())
         data = json.loads(response.content).get("result", [])[0]
         info = {
             "title": data.get("title", product_id),
             "description": data.get("description", ""),
             "features": data.get("feature_bullets", []),
         }
+        print("Return time for get_product_info: ", datetime.now())
     except Exception as error:
         error_msg = f"Unable to get product info for {product_id}. {error}"
         print(error_msg)
@@ -58,9 +63,19 @@ async def load_product_info(product_id: str) -> dict:
     """
     try:
         with open(DATA_DIR.joinpath(f"info/{product_id}.json"), "r") as f:
-            return json.load(f)
+            data = json.load(f)
     except FileNotFoundError:
-        return await get_product_info(product_id)
+        data = await get_product_info(product_id)
+
+    if product_id not in loaded_product_info:
+        vectorstore.add_documents([
+            Document(page_content=data["title"]),
+            Document(page_content=data["description"]),
+            *[Document(page_content=feature) for feature in data["features"]]
+        ])
+        loaded_product_info.add(product_id)
+
+    return data
 
 
 async def get_product_reviews(product_id: str, num_pages: int = 4) -> pd.DataFrame:
