@@ -1,22 +1,18 @@
 """fivestar.summary.py"""
 
-import json
-
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models import ChatOpenAI
-from langchain.docstore.document import Document
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
 
 from fivestar.product_info import load_product_info, load_product_reviews
 from fivestar.store import vectorstore
 
 llm = ChatOpenAI(model_name="gpt-4")
-embeddings = OpenAIEmbeddings()
 summarize_chain = load_summarize_chain(llm, chain_type="map_reduce")
 
 buffers = {}
+qa_chains = {}
 
 
 async def summarize_product(product_id: str) -> str:
@@ -25,15 +21,20 @@ async def summarize_product(product_id: str) -> str:
     :param product_id: Product ID to lookup.
     :return: Summary of product reviews.
     """
-    product_info = await load_product_info(product_id)
+    await load_product_info(product_id)
 
-    docs = [
-        Document(page_content=(json.dumps(product_info.get(key, ""))))
-        for key in ["title", "description", "features"]
-    ]
+    qa = _get_qa_chain(product_id)
 
-    summary = summarize_chain.run(docs)
-    return summary
+    query = """
+    Please provide a comprehensive summary of the product. 
+    What are its main features and benefits? 
+    Provide a brief overview of the product's specifications. 
+    Do not include any customer reviews in your summary. 
+    Provide an unbiased summary of the product based on the information provided on the product page. 
+    Describe the product as if you were explaining it to a friend. 
+    """
+    result = qa({"question": query})
+    return result["answer"]
 
 
 async def summarize_reviews(product_id: str) -> str:
@@ -45,16 +46,17 @@ async def summarize_reviews(product_id: str) -> str:
 
     await load_product_reviews(product_id)
 
-    memory = _get_conv_mem_buf(product_id)
-    qa = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever(), memory=memory)
+    qa = _get_qa_chain(product_id)
 
     query = """
-    Please provide a comprehensive summary of the product associated with the provided ID. 
-    What are its main features? What are the positive and negative aspects of this product as expressed in customer reviews? 
+    Please provide a comprehensive summary of the product reviews. 
+    What are its main features? 
+    What are the positive and negative aspects of this product as expressed in customer reviews? 
     What is the overall sentiment of the reviews? 
     How does it compare to other similar products in the market? 
     What improvements or changes do customers commonly suggest for this product? 
-    Finally, based on these reviews, would you say the product is worth buying?
+    Finally, based on these reviews, would you say the product is worth buying? 
+    Provide all this information in a concise yet comprehensive summary only based on the reviews provided.
     """
     result = qa({"question": query})
     return result["answer"]
@@ -69,8 +71,7 @@ async def chat_with_reviews(product_id: str, query: str) -> str:
     """
     await load_product_reviews(product_id)
 
-    memory = _get_conv_mem_buf(product_id)
-    qa = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever(), memory=memory)
+    qa = _get_qa_chain(product_id)
 
     # Add following moderation to prevent irrelevant questions
     query += """
@@ -94,3 +95,15 @@ def _get_conv_mem_buf(product_id: str) -> ConversationBufferMemory:
     if product_id not in buffers:
         buffers[product_id] = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     return buffers[product_id]
+
+
+def _get_qa_chain(product_id):
+    """
+    Get QA chain.
+    :param product_id: Product ID to lookup.
+    :return: QA chain.
+    """
+    if product_id not in qa_chains:
+        memory = _get_conv_mem_buf(product_id)
+        qa_chains[product_id] = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever(), memory=memory)
+    return qa_chains[product_id]
