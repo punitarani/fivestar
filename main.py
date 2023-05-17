@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from fivestar.product_info import load_product_info
-from fivestar.summary import summarize_product, summarize_reviews, chat_with_reviews
+from fivestar.summary import summarize_product, summarize_reviews, get_pros_cons, chat_with_reviews
 
 app = FastAPI()
 
@@ -20,7 +20,7 @@ app.add_middleware(
 
 
 @app.get("/info")
-async def product_info_handler(product_id: str):
+async def product_info_handler(product_id: str) -> dict:
     """
     Get product information.
     :param product_id: Product ID to lookup.
@@ -31,7 +31,7 @@ async def product_info_handler(product_id: str):
 
 
 @app.get("/summarize-product")
-async def summarize_product_handler(product_id: str):
+async def summarize_product_handler(product_id: str) -> dict:
     """
     Summarize product reviews.
     :param product_id: Product ID to lookup.
@@ -47,7 +47,7 @@ async def summarize_product_handler(product_id: str):
 
 
 @app.get("/summarize-reviews")
-async def summarize_reviews_handler(product_id: str):
+async def summarize_reviews_handler(product_id: str) -> dict:
     """
     Summarize product reviews.
     :param product_id: Product ID to lookup.
@@ -59,8 +59,19 @@ async def summarize_reviews_handler(product_id: str):
     }
 
 
+@app.get("/pros-cons")
+async def get_pros_cons_handler(product_id: str) -> dict:
+    """
+    Get pros and cons of product.
+    :param product_id: Product ID to lookup.
+    :return: Pros and cons of product.
+    """
+    pros_cons = await get_pros_cons(product_id)
+    return pros_cons
+
+
 @app.get("/chat")
-async def chat_with_reviews_handler(product_id: str, query: str):
+async def chat_with_reviews_handler(product_id: str, query: str) -> dict:
     """
     Chat with product reviews.
     :param product_id: Product ID to lookup.

@@ -1,5 +1,7 @@
 """fivestar.summary.py"""
 
+import json
+
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
@@ -89,6 +91,48 @@ async def summarize_reviews(product_id: str) -> str:
         f.write(summary)
 
     return summary
+
+
+async def get_pros_cons(product_id: str) -> dict:
+    """
+    Get pros and cons of product.
+    :param product_id: Product ID to lookup.
+    :return: Pros and cons of product.
+    """
+
+    await load_product_reviews(product_id)
+
+    query = """
+    Please provide a comprehensive list of pros and cons for the product. 
+    What are the positive and negative aspects of this product as expressed in customer reviews? 
+    Provide all this information in a concise yet comprehensive list only based on the reviews provided.
+    You need to respond to this question in JSON format with the following structure:
+    {"pros": ["pro1", "pro2", ...], "cons": ["con1", "con2", ...]}
+    Do not include any data other than the JSON object in your response.
+    """
+
+    await load_product_info(product_id)
+    await load_product_reviews(product_id)
+
+    try:
+        with open(DATA_DIR.joinpath("summaries", "pros-cons", f"{product_id}.json"), "r") as f:
+            pros_cons = json.load(f)
+            memory = _get_conv_mem_buf(product_id)
+            memory.save_context({"question": query}, {"answer": pros_cons})
+            return pros_cons
+    except FileNotFoundError:
+        pass
+
+    qa = _get_qa_chain(product_id)
+
+    result = qa({"question": query})
+    pros_cons = result["answer"]
+    pros_cons = json.loads(pros_cons)
+
+    with open(DATA_DIR.joinpath("summaries", "pros-cons", f"{product_id}.json"), "w") as f:
+        json.dump(pros_cons, f)
+
+    return pros_cons
 
 
 async def chat_with_reviews(product_id: str, query: str) -> str:
