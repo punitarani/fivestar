@@ -17,19 +17,6 @@ document.addEventListener("DOMContentLoaded", function () {
         fetchProductProsCons(currentUrl);
     });
 
-    // Function to fetch a new quote
-    function fetchNewQuote() {
-        fetch("https://api.quotable.io/random")
-            .then(response => response.json())
-            .then(data => {
-                quoteElement.textContent = data.content;
-            })
-            .catch(error => {
-                quoteElement.textContent = "Failed to fetch quote";
-                console.error(error);
-            });
-    }
-
     function extractProductId(url) {
         const pattern = /\/dp\/([A-Z0-9]{10})/;
         const match = url.match(pattern);
